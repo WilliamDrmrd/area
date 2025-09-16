@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "AutomationHistory" ALTER COLUMN "runnedAt" SET DEFAULT CURRENT_TIMESTAMP;

@@ -1,0 +1,4 @@
+.env
+.idea
+api/package-lock.json
+.obsidian

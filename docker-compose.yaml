@@ -1,0 +1,64 @@
+version: "3"
+services:
+  db:
+    image: postgres:latest
+    ports:
+      - "5434:5432"
+    env_file: .env
+
+  server:
+    build: ./api
+    ports:
+      - "8080:3000"
+    depends_on:
+      - db
+    volumes:
+      - ./api:/usr/src/app:rw
+    env_file: .env
+
+  client_mobile:
+    build: ./area-mobile-app
+    ports:
+      - "8082:8082"
+    volumes:
+      - common-volume:/common
+    env_file: .env
+
+  client_web:
+    build: ./area-web
+    ports:
+      - "8081:3000"
+    depends_on:
+      - server
+      - client_mobile
+    volumes:
+      - ./area-web:/usr/src/app:rw
+      - common-volume:/common
+    env_file: .env
+
+  db-test:
+    image: postgres:latest
+    ports:
+      - "5434:5432"
+    env_file: .env
+    profiles:
+      - test
+
+  server-documentation:
+    build: ./api
+    command: npx @compodoc/compodoc -p tsconfig.json -s
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    profiles:
+      - docs
+
+  tests:
+    build: ./api
+    command: yarn run test:cov
+    profiles:
+      - test
+
+volumes:
+  common-volume:

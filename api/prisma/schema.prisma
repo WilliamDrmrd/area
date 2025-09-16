@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  username              String
+  email                 String                @unique
+  password              String
+  firstName             String?
+  lastName              String?
+  uuid                  String                @unique
+  isActivated           Boolean               @default(false)
+  isOauth               Boolean               @default(false)
+  token                 String?
+  subscribedAutomations Automation[]          @relation("UserSubscriptions")
+  services              Service[]
+  automations           Automation[]
+  serviceCredentials    ServicesCredentials[]
+  ActionOptions         ActionOptions[]
+  ReactionOptions       ReactionOptions[]
+
+  @@map("users")
+}
+
+model Service {
+  id                  Int                   @id @default(autoincrement())
+  createdAt           DateTime              @default(now())
+  name                String                @unique
+  description         String?
+  actions             Action[]
+  reactions           Reaction[]
+  User                User?                 @relation(fields: [userId], references: [id])
+  userId              Int?
+  isOAuth             Boolean               @default(false)
+  servicesCredentials ServicesCredentials[]
+  automations         Automation[]
+
+  @@map("services")
+}
+
+model Automation {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name              String
+  description       String?
+  action            Action              @relation(fields: [actionId], references: [id])
+  actionId          Int
+  reaction          Reaction            @relation(fields: [reactionId], references: [id])
+  reactionId        Int
+  creator           User?               @relation(fields: [creatorID], references: [id])
+  creatorID         Int?
+  subscribedUsers   User[]              @relation("UserSubscriptions")
+  services          Service[]
+  actionOptions     ActionOptions[]
+  reactionOptions   ReactionOptions[]
+  AutomationHistory AutomationHistory[]
+
+  @@map("automations")
+}
+
+model AutomationHistory {
+  id           Int        @id @default(autoincrement())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  automation   Automation @relation(fields: [automationId], references: [id])
+  automationId Int
+  uuid         String     @unique
+  runnedAt     DateTime   @default(now())
+}
+
+model ServicesCredentials {
+  id           Int       @id @default(autoincrement())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  validUntil   DateTime?
+  credentials  String
+  refreshToken String?
+  service      Service   @relation(fields: [serviceId], references: [id])
+  serviceId    Int
+  user         User      @relation(fields: [userId], references: [id])
+  userId       Int
+
+  @@unique([serviceId, userId])
+}
+
+model ActionOptions {
+  id           Int         @id @default(autoincrement())
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  key          String
+  value        String
+  action       Action      @relation(fields: [actionId], references: [id])
+  actionId     Int
+  user         User?       @relation(fields: [userId], references: [id])
+  userId       Int?
+  Automation   Automation? @relation(fields: [automationId], references: [id])
+  automationId Int?
+}
+
+model Action {
+  id                  Int             @id @default(autoincrement())
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  name                String          @unique
+  description         String?
+  service             Service         @relation(fields: [serviceId], references: [id])
+  serviceId           Int
+  compatibleReactions Reaction[]
+  automations         Automation[]
+  needAuth            Boolean         @default(false)
+  hasOptions          Boolean         @default(false)
+  ActionOptions       ActionOptions[]
+  additionalFields    Json?           @default("{}")
+
+  @@map("actions")
+}
+
+model ReactionOptions {
+  id           Int         @id @default(autoincrement())
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  key          String
+  value        String
+  reaction     Reaction    @relation(fields: [reactionId], references: [id])
+  reactionId   Int
+  user         User?       @relation(fields: [userId], references: [id])
+  userId       Int?
+  Automation   Automation? @relation(fields: [automationId], references: [id])
+  automationId Int?
+}
+
+model Reaction {
+  id                Int               @id @default(autoincrement())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  name              String            @unique
+  description       String?
+  service           Service           @relation(fields: [serviceId], references: [id])
+  serviceId         Int
+  compatibleActions Action[]
+  automations       Automation[]
+  needAuth          Boolean           @default(false)
+  hasOptions        Boolean           @default(false)
+  ReactionOptions   ReactionOptions[]
+  additionalFields  Json?             @default("{}")
+
+  @@map("reactions")
+}
